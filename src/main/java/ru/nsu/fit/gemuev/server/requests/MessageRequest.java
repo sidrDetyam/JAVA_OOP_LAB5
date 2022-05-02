@@ -1,5 +1,6 @@
 package ru.nsu.fit.gemuev.server.requests;
 
+import ru.nsu.fit.gemuev.util.Request;
 import ru.nsu.fit.gemuev.client.events.MessageEvent;
 import ru.nsu.fit.gemuev.server.User;
 import ru.nsu.fit.gemuev.server.Server;
@@ -16,6 +17,9 @@ public record MessageRequest(String message) implements Request {
         if(opt.isPresent()) {
             User user = opt.get();
             server.broadcast(new MessageEvent(user.name(), message));
+        }
+        else{
+            System.out.println("Unknown user");
         }
     }
 }

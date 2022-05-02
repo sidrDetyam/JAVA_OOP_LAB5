@@ -1,11 +1,10 @@
 package ru.nsu.fit.gemuev.server;
 
 import org.jetbrains.annotations.NotNull;
+import ru.nsu.fit.gemuev.util.AbstractSenderListenerFactory;
+import ru.nsu.fit.gemuev.util.serializable.SerializableSenderListenerFactory;
 import ru.nsu.fit.gemuev.client.events.*;
-import ru.nsu.fit.gemuev.server.requests.RequestListener;
-import ru.nsu.fit.gemuev.server.requests.SerializableRequestListener;
-import ru.nsu.fit.gemuev.client.events.Event;
-import ru.nsu.fit.gemuev.client.events.SerializableEventSender;
+import ru.nsu.fit.gemuev.util.Event;
 import ru.nsu.fit.gemuev.client.events.SuccessLoginResponse;
 
 import java.io.IOException;
@@ -31,14 +30,9 @@ public class Server {
 
     private final int port;
     private final int maxUsers;
-    //event sender should be async-safe
-    private final EventSender eventSender;
-    private final RequestListener requestListener;
+    private final AbstractSenderListenerFactory senderListenerFactory;
     private final List<User> users;
 
-    public RequestListener getRequestListener() {
-        return requestListener;
-    }
 
     public int getPort(){
         return port;
@@ -46,8 +40,7 @@ public class Server {
 
     private Server() {
         users = new ArrayList<>();
-        eventSender = new SerializableEventSender();
-        requestListener = new SerializableRequestListener();
+        senderListenerFactory = SerializableSenderListenerFactory.getInstance();
 
         try (InputStream inputStream = Server.class.getResourceAsStream("/server_config.properties")){
 
@@ -76,6 +69,7 @@ public class Server {
 
     public void sendEvent(@NotNull Event event, @NotNull User user){
         try {
+            var eventSender = senderListenerFactory.eventSenderInstance();
             eventSender.sendEvent(event, user.socket());
         }
         catch (IOException e){
@@ -155,7 +149,8 @@ public class Server {
             ServerSocket serverSocket = new ServerSocket(port);
             while(!Thread.interrupted()) {
                 Socket socket = serverSocket.accept();
-                CompletableFuture.runAsync(new RequestHandler(this, socket));
+                var requestListener = senderListenerFactory.requestListenerInstance();
+                CompletableFuture.runAsync(new RequestHandler(this, socket, requestListener));
             }
         }
         catch(IOException e){

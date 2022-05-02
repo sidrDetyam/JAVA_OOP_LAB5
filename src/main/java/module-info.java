@@ -14,5 +14,11 @@ module OOP_LAB {
     exports ru.nsu.fit.gemuev.server.requests;
     exports ru.nsu.fit.gemuev.server;
     opens ru.nsu.fit.gemuev.server.requests to javafx.fxml;
+    exports ru.nsu.fit.gemuev.util;
+    opens ru.nsu.fit.gemuev.util to javafx.fxml;
+    exports ru.nsu.fit.gemuev.util.serializable;
+    opens ru.nsu.fit.gemuev.util.serializable to javafx.fxml;
+    //exports ru.nsu.fit.gemuev.util;
+    //opens ru.nsu.fit.gemuev.util to javafx.fxml;
 }
 

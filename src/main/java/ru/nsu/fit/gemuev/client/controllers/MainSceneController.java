@@ -6,40 +6,55 @@ import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
-import ru.nsu.fit.gemuev.client.Client;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
 import org.jetbrains.annotations.NotNull;
+import ru.nsu.fit.gemuev.client.Client;
+import ru.nsu.fit.gemuev.client.Model;
+import ru.nsu.fit.gemuev.client.MainView;
 
 
-public class MainSceneController {
+public class MainSceneController implements MainView {
 
     @FXML
     private TextArea messagesArea;
     @FXML
     private TextArea usersOnline;
     @FXML
-    private Button button;
+    private Button sendButton;
     @FXML
     private TextField textField;
 
+    private static final Model model = Model.getInstance();
 
-    ///TODO пиздец
     public MainSceneController(){
-        Client.primaryController = this;
+        ///TODO reference leak from constructor
+        model.setMainView(this);
     }
 
 
     @FXML
-    private void sendNewMessage(){
+    private void sendButtonClick(){
         String s = textField.getText();
-        textField.setText("");
-        Client.model.sendNewMessage(s);
+        if(!s.equals("")) {
+            textField.setText("");
+            model.sendNewMessage(s);
+        }
     }
 
+    @FXML
+    private void enterTyped(KeyEvent e){
+        if(e.getCode().equals(KeyCode.ENTER)) {
+            sendButtonClick();
+        }
+    }
 
-    public synchronized void addNewMessage(String name, String message){
+    @Override
+    public synchronized void addNewMessage(@NotNull String name, @NotNull String message){
         messagesArea.setText(messagesArea.getText() + "\n" + name + ": " + message);
     }
 
+    @Override
     public synchronized void updateUsersOnline(@NotNull List<String> userNames){
         usersOnline.setText("");
         for(String userName : userNames){
@@ -47,4 +62,8 @@ public class MainSceneController {
         }
     }
 
+    @Override
+    public void openForm() {
+        Client.setMainScene();
+    }
 }

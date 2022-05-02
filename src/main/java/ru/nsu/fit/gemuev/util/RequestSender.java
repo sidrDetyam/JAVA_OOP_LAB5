@@ -1,4 +1,4 @@
-package ru.nsu.fit.gemuev.server.requests;
+package ru.nsu.fit.gemuev.util;
 
 import org.jetbrains.annotations.NotNull;
 

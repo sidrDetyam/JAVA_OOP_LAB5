@@ -1,7 +1,7 @@
 package ru.nsu.fit.gemuev.client;
 
-import ru.nsu.fit.gemuev.client.events.Event;
-import ru.nsu.fit.gemuev.client.events.EventListener;
+import ru.nsu.fit.gemuev.util.Event;
+import ru.nsu.fit.gemuev.util.EventListener;
 
 import java.io.IOException;
 import java.net.Socket;

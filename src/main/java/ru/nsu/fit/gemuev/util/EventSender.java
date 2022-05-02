@@ -1,4 +1,4 @@
-package ru.nsu.fit.gemuev.client.events;
+package ru.nsu.fit.gemuev.util;
 
 import org.jetbrains.annotations.NotNull;
 

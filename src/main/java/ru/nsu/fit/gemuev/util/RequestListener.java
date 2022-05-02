@@ -1,4 +1,4 @@
-package ru.nsu.fit.gemuev.server.requests;
+package ru.nsu.fit.gemuev.util;
 
 import java.io.IOException;
 import java.net.Socket;

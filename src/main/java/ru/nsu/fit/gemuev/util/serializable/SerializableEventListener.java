@@ -1,6 +1,8 @@
-package ru.nsu.fit.gemuev.client.events;
+package ru.nsu.fit.gemuev.util.serializable;
 
 import org.jetbrains.annotations.NotNull;
+import ru.nsu.fit.gemuev.util.EventListener;
+import ru.nsu.fit.gemuev.util.Event;
 
 import java.io.BufferedInputStream;
 import java.io.IOException;
@@ -9,6 +11,16 @@ import java.net.Socket;
 import java.util.Optional;
 
 public class SerializableEventListener implements EventListener {
+
+    private SerializableEventListener(){}
+
+    private static class Holder{
+        static final SerializableEventListener INSTANCE = new SerializableEventListener();
+    }
+
+    public static SerializableEventListener getInstance() {
+        return SerializableEventListener.Holder.INSTANCE;
+    }
 
     @Override
     public Optional<Event> nextEvent(@NotNull Socket socket) throws IOException {
