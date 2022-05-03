@@ -2,14 +2,26 @@
 
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
+<?import javafx.scene.text.*?>
 
-<Pane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="390.0"
-      prefWidth="587.0" xmlns="http://javafx.com/javafx/16" xmlns:fx="http://javafx.com/fxml/1"
-      fx:controller="ru.nsu.fit.gemuev.client.controllers.MainSceneController">
-   <TextField fx:id="textField" layoutX="14.0" layoutY="361.0" onKeyPressed="#enterTyped" prefHeight="25.0"
-              prefWidth="515.0"/>
-   <Button fx:id="sendButton" layoutX="534.0" layoutY="361.0" mnemonicParsing="false" onAction="#sendButtonClick"
-           text="Send"/>
-   <TextArea fx:id="messagesArea" editable="false" layoutX="141.0" layoutY="14.0" prefHeight="342.0" prefWidth="434.0"/>
-   <TextArea fx:id="usersOnline" editable="false" layoutX="14.0" layoutY="14.0" prefHeight="342.0" prefWidth="118.0"/>
+<Pane maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefHeight="412.0" prefWidth="587.0" xmlns="http://javafx.com/javafx/16" xmlns:fx="http://javafx.com/fxml/1" fx:controller="ru.nsu.fit.gemuev.client.controllers.MainSceneController">
+   <TextField fx:id="textField" layoutX="5.0" layoutY="381.0" onKeyPressed="#enterTyped" prefHeight="25.0" prefWidth="532.0" />
+   <Button fx:id="sendButton" layoutX="540.0" layoutY="381.0" mnemonicParsing="false" onAction="#sendButtonClick" text="Send" />
+   <TextArea fx:id="messagesArea" editable="false" layoutX="125.0" layoutY="34.0" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefHeight="342.0" prefWidth="456.0">
+      <font>
+         <Font name="Consolas" size="12.0" />
+      </font></TextArea>
+   <TextArea fx:id="usersOnline" editable="false" layoutX="5.0" layoutY="34.0" prefHeight="342.0" prefWidth="114.0">
+      <font>
+         <Font name="Consolas" size="16.0" />
+      </font></TextArea>
+   <MenuBar fx:id="menu" layoutX="-1.0" layoutY="1.0" prefHeight="10.0" prefWidth="587.0">
+     <menus>
+       <Menu fx:id="logoutButton" mnemonicParsing="false" text="Logout">
+            <items>
+               <MenuItem mnemonicParsing="false" onAction="#logoutButtonClick" text="Logout" />
+               <MenuItem mnemonicParsing="false" onAction="#closeButtonClick" text="Close" />
+            </items></Menu>
+     </menus>
+   </MenuBar>
 </Pane>

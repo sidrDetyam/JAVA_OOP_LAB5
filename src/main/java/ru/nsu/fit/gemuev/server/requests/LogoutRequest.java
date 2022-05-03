@@ -5,7 +5,7 @@ import ru.nsu.fit.gemuev.server.Server;
 
 import java.net.Socket;
 
-public record LogoutRequest() implements Request {
+public class LogoutRequest implements Request {
 
     @Override
     public void handleRequest(Server server, Socket socket) {

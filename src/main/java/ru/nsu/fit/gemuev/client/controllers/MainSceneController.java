@@ -1,21 +1,29 @@
+
 package ru.nsu.fit.gemuev.client.controllers;
 
+import java.net.URL;
 import java.util.List;
+import java.util.ResourceBundle;
 
+import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
-import javafx.scene.control.Button;
-import javafx.scene.control.TextArea;
-import javafx.scene.control.TextField;
+import javafx.fxml.Initializable;
+import javafx.scene.control.*;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import org.jetbrains.annotations.NotNull;
 import ru.nsu.fit.gemuev.client.Client;
 import ru.nsu.fit.gemuev.client.Model;
 import ru.nsu.fit.gemuev.client.MainView;
+import ru.nsu.fit.gemuev.server.Message;
 
 
-public class MainSceneController implements MainView {
+public class MainSceneController implements MainView, Initializable {
 
+    @FXML
+    private Menu logoutButton;
+    @FXML
+    private MenuBar menu;
     @FXML
     private TextArea messagesArea;
     @FXML
@@ -27,9 +35,15 @@ public class MainSceneController implements MainView {
 
     private static final Model model = Model.getInstance();
 
-    public MainSceneController(){
-        ///TODO reference leak from constructor
-        model.setMainView(this);
+
+    @FXML
+    private void logoutButtonClick(ActionEvent e){
+        model.sendLogoutRequest();
+    }
+
+    @FXML
+    private void closeButtonClick(ActionEvent e){
+        System.exit(0);
     }
 
 
@@ -50,20 +64,27 @@ public class MainSceneController implements MainView {
     }
 
     @Override
-    public synchronized void addNewMessage(@NotNull String name, @NotNull String message){
-        messagesArea.setText(messagesArea.getText() + "\n" + name + ": " + message);
+    public synchronized void addNewMessage(@NotNull Message message){
+        messagesArea.appendText(
+                "\n[%s] %s: %s".formatted(message.date(), message.userName(), message.message()));
     }
 
     @Override
     public synchronized void updateUsersOnline(@NotNull List<String> userNames){
         usersOnline.setText("");
         for(String userName : userNames){
-            usersOnline.setText(usersOnline.getText() + "\n" + userName);
+            usersOnline.appendText(userName);
         }
     }
 
     @Override
     public void openForm() {
         Client.setMainScene();
+    }
+
+
+    @Override
+    public void initialize(URL url, ResourceBundle resourceBundle) {
+        model.setMainView(this);
     }
 }

@@ -11,11 +11,14 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.concurrent.CompletableFuture;
+
 
 public class Server {
 
@@ -30,16 +33,25 @@ public class Server {
 
     private final int port;
     private final int maxUsers;
+    private final int lastMessagesCount;
+    private final int timeout;
     private final AbstractSenderListenerFactory senderListenerFactory;
     private final List<User> users;
+    private final List<Message> messages;
+    private Thread timeoutDemon;
+    private final List<Thread> requestHandlers;
 
 
     public int getPort(){
         return port;
     }
 
+    public int getTimeout(){return timeout;}
+
     private Server() {
         users = new ArrayList<>();
+        messages = new ArrayList<>();
+        requestHandlers = new ArrayList<>();
         senderListenerFactory = SerializableSenderListenerFactory.getInstance();
 
         try (InputStream inputStream = Server.class.getResourceAsStream("/server_config.properties")){
@@ -48,11 +60,13 @@ public class Server {
             tmp.load(inputStream);
             String strPort = tmp.getProperty("port");
             String strMaxUsers = tmp.getProperty("max_count_of_users");
-            if(strMaxUsers==null || strPort==null){
-                throw new LoadPropertiesException("Server initialization fail: wrong config");
-            }
+            String strMaxCntMessages = tmp.getProperty("last_messages_count");
+            String strTimeout = tmp.getProperty("user_time_out");
+
             port = Integer.parseInt(strPort);
             maxUsers = Integer.parseInt(strMaxUsers);
+            lastMessagesCount = Integer.parseInt(strMaxCntMessages);
+            timeout = Integer.parseInt(strTimeout);
 
         } catch (IOException e) {
             throw new LoadPropertiesException("Server initialization fail", e);
@@ -60,7 +74,7 @@ public class Server {
     }
 
 
-    public void broadcast(@NotNull Event event){
+    public void broadcastEvent(@NotNull Event event){
         for(User user : users) {
             sendEvent(event, user);
         }
@@ -85,7 +99,30 @@ public class Server {
     }
 
 
-    public synchronized void userLogin(User user){
+    public void newMessageRequest(Socket socket, String message){
+
+        var opt = findUserBySocket(socket);
+        if(opt.isEmpty()){
+            System.out.println("Unknown user");
+            return;
+        }
+        User user = opt.get();
+        user.updateActivity();
+
+        DateTimeFormatter dtf = DateTimeFormatter.ofPattern("HH:mm");
+        var date = dtf.format(LocalTime.now());
+        Message message_ = new Message(user.name(), message, date);
+
+        synchronized(this) {
+            messages.add(message_);
+        }
+        broadcastEvent(new MessageEvent(message_));
+    }
+
+
+    public synchronized void userLogin(Socket socket, String userName){
+
+        User user = new User(userName, socket);
 
         if(users.size()==maxUsers){
             CompletableFuture.runAsync(() ->
@@ -99,7 +136,7 @@ public class Server {
 
         CompletableFuture.runAsync(() -> {
             sendEvent(new SuccessLoginResponse(42), user);
-            broadcast(new ChangeOnlineUsersEvent(onlineUserList()));
+            broadcastEvent(new ChangeOnlineUsersEvent(onlineUserList()));
         });
     }
 
@@ -112,7 +149,7 @@ public class Server {
             users.remove(opt.get());
             debugPrintAllUsers();
 
-            CompletableFuture.runAsync(() -> broadcast(new ChangeOnlineUsersEvent(onlineUserList())));
+            CompletableFuture.runAsync(() -> broadcastEvent(new ChangeOnlineUsersEvent(onlineUserList())));
         }
 
         try {
@@ -120,9 +157,29 @@ public class Server {
         }
         catch(IOException ignore){}
     }
-    
+
+
+    public synchronized void lastMessagesListRequest(Socket socket){
+
+        var opt = findUserBySocket(socket);
+        if(opt.isPresent()){
+            User user = opt.get();
+            ArrayList<Message> list = new ArrayList<>();
+            int startInd = messages.size()-Math.min(lastMessagesCount, messages.size());
+            for(int i=startInd; i<messages.size(); ++i){
+                list.add(messages.get(i));
+            }
+
+            sendEvent(new LastMessagesListEvent(list), user);
+        }
+        else {
+            System.out.println("Unknown user");
+        }
+    }
+
 
     public synchronized Optional<User> findUserBySocket(Socket socket){
+
         for(User user : users){
             if(user.socket().equals(socket)){
                 return Optional.of(user);
@@ -143,14 +200,31 @@ public class Server {
     }
     
 
+    public synchronized void deleteNonActivityUsers(){
+
+        for(User user : users){
+            if(user.isTimeOut(timeout)){
+                sendEvent(new FailLoginEvent("timeout"), user);
+                System.out.println("User " + user.name() + " disconnect by timout" );
+            }
+        }
+    }
+
+
     public void launch(){
 
         try {
             ServerSocket serverSocket = new ServerSocket(port);
+            timeoutDemon = new Thread(new TimeoutDemon(this));
+            timeoutDemon.start();
+
             while(!Thread.interrupted()) {
                 Socket socket = serverSocket.accept();
                 var requestListener = senderListenerFactory.requestListenerInstance();
-                CompletableFuture.runAsync(new RequestHandler(this, socket, requestListener));
+
+                Thread requestHandler = new Thread(new RequestHandler(this, socket, requestListener));
+                requestHandlers.add(requestHandler);
+                requestHandler.start();
             }
         }
         catch(IOException e){
@@ -158,8 +232,22 @@ public class Server {
         }
     }
 
+    public synchronized void stop(){
+        for(User user : users){
+            sendEvent(new FailLoginEvent("Server stopped"), user);
+        }
+        users.clear();
+
+        timeoutDemon.interrupt();
+        for(Thread thread : requestHandlers){
+            thread.interrupt();
+        }
+        requestHandlers.clear();
+    }
+
 
     public static void main(String[] args) {
+
         Server.getInstance().launch();
     }
 

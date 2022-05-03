@@ -22,7 +22,7 @@ public record EventHandler(Socket socket, Model model, EventListener eventListen
                 }
                 Event event = opt.get();
 
-                System.out.println("New event! " + event);
+                System.out.println(event);
                 event.handleEvent(model);
 
             } catch (IOException e) {

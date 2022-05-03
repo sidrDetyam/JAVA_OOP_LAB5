@@ -21,9 +21,10 @@ public class Client extends Application {
         stage.getIcons().add(new Image(Objects.requireNonNull(
                 Client.class.getResourceAsStream("/CiderIcon.png"))));
 
-        scene = new Scene(loadFXML("/LoginScene.fxml"), 587, 400);
+        scene = new Scene(loadFXML("/LoginScene.fxml"), 587, 410);
         new Scene(loadFXML("/MainScene.fxml"), 587, 400);
         stage.setScene(scene);
+        stage.setResizable(false);
         stage.show();
     }
 
@@ -35,7 +36,7 @@ public class Client extends Application {
         setRoot("/LoginScene.fxml");
     }
 
-    static void setRoot(String fxml){
+    private static void setRoot(String fxml){
         try {
             scene.setRoot(loadFXML(fxml));
         }
