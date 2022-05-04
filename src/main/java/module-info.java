@@ -4,6 +4,7 @@ module OOP_LAB {
     requires javafx.controls;
     requires javafx.fxml;
     requires org.jetbrains.annotations;
+    requires log4j;
 
     opens ru.nsu.fit.gemuev.client to javafx.fxml;
     exports ru.nsu.fit.gemuev.client;

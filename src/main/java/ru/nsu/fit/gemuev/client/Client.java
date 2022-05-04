@@ -6,6 +6,7 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.image.Image;
 import javafx.stage.Stage;
+import javafx.stage.WindowEvent;
 
 import java.io.*;
 import java.util.Objects;
@@ -25,6 +26,11 @@ public class Client extends Application {
         new Scene(loadFXML("/MainScene.fxml"), 587, 400);
         stage.setScene(scene);
         stage.setResizable(false);
+
+        stage.getScene().getWindow().addEventFilter(WindowEvent.WINDOW_CLOSE_REQUEST, e -> {
+            Model.getInstance().close();
+        });
+
         stage.show();
     }
 

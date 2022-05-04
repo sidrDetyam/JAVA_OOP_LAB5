@@ -7,8 +7,8 @@ import java.io.IOException;
 import java.net.Socket;
 
 
-public record EventHandler(Socket socket, Model model, EventListener eventListener) implements Runnable{
-
+public record EventHandler(Socket socket, Model model, EventListener eventListener)
+        implements Runnable{
 
     @Override
     public void run() {
@@ -26,7 +26,6 @@ public record EventHandler(Socket socket, Model model, EventListener eventListen
                 event.handleEvent(model);
 
             } catch (IOException e) {
-                e.printStackTrace();
                 model.disconnect();
                 break;
             }

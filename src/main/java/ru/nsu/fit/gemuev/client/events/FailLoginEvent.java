@@ -8,6 +8,6 @@ public record FailLoginEvent(@NotNull String cause) implements Event {
 
     @Override
     public void handleEvent(@NotNull Model model) {
-        model.acceptLoginResponse(false);
+        model.logoutEvent(cause);
     }
 }

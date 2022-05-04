@@ -8,6 +8,6 @@ public record SuccessLoginResponse(int sessionId) implements Event {
 
     @Override
     public void handleEvent(@NotNull Model model) {
-        model.acceptLoginResponse(true);
+        model.acceptLoginResponse();
     }
 }

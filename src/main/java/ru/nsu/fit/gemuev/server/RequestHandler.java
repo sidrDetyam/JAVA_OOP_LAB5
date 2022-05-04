@@ -23,6 +23,7 @@ public record RequestHandler(@NotNull Server server, @NotNull Socket socket,
                 }
 
                 Request request = opt.get();
+                server.getLogger().info("Receive request: " + request);
                 request.handleRequest(server, socket);
             }
 

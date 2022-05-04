@@ -3,6 +3,7 @@ package ru.nsu.fit.gemuev.client;
 
 import ru.nsu.fit.gemuev.server.Message;
 import ru.nsu.fit.gemuev.util.AbstractSenderListenerFactory;
+import ru.nsu.fit.gemuev.util.Request;
 import ru.nsu.fit.gemuev.util.serializable.SerializableSenderListenerFactory;
 import ru.nsu.fit.gemuev.server.Server;
 import ru.nsu.fit.gemuev.server.requests.*;
@@ -26,9 +27,9 @@ public class Model{
 
     private Socket socket;
     private final AbstractSenderListenerFactory senderListenerFactory;
-
     private LoginView loginView;
     private MainView mainView;
+
 
     public void setLoginView(LoginView loginView){
         this.loginView = loginView;
@@ -44,52 +45,54 @@ public class Model{
     }
 
 
+    public void sendRequest(Request request){
+        var requestSender = senderListenerFactory.requestSenderInstance();
+        CompletableFuture.runAsync(() -> {
+            try {
+                requestSender.sendRequest(socket, request);
+            } catch (IOException ignore) {}
+        });
+    }
+
+
     public void sendLoginRequest(String name){
 
         if(connect()) {
-            var requestSender = senderListenerFactory.requestSenderInstance();
-            CompletableFuture.runAsync(() -> {
-                try {
-                    requestSender.sendRequest(socket, new LoginRequest(name));
-                } catch (IOException ignore) {}
-            });
-        }
-        else {
-            loginView.openForm();
-            mainView.closeForm();
+            sendRequest(new LoginRequest(name));
         }
     }
 
 
-    public void acceptLoginResponse(boolean isSuccess){
-        if(isSuccess){
-            loginView.closeForm();
-            mainView.openForm();
-            getLastMessages();
+    public void acceptLoginResponse(){
+        loginView.closeForm();
+        mainView.openForm();
+        getLastMessages();
+    }
+
+
+    public void disconnect(){
+        try {
+            mainView.closeForm();
+            loginView.openForm();
+            socket.close();
         }
-        else{
-            disconnect();
-        }
+        catch(IOException ignore) {}
+    }
+
+
+    public void logoutEvent(String cause){
+        disconnect();
+        loginView.showLogoutCause(cause);
     }
 
 
     public void sendLogoutRequest(){
-        var requestSender = senderListenerFactory.requestSenderInstance();
-        CompletableFuture.runAsync(() -> {
-            try {
-                requestSender.sendRequest(socket, new LogoutRequest());
-            } catch (IOException ignore) {}
-        });
+        sendRequest(new LogoutRequest());
     }
 
 
     public void sendNewMessage(String message){
-        var requestSender = senderListenerFactory.requestSenderInstance();
-        CompletableFuture.runAsync(() -> {
-            try {
-                requestSender.sendRequest(socket, new MessageRequest(message));
-            } catch (IOException ignore) {}
-        });
+        sendRequest(new MessageRequest(message));
     }
 
 
@@ -98,23 +101,16 @@ public class Model{
             socket = new Socket("localhost", Server.getInstance().getPort());
             var eventListener = senderListenerFactory.eventListenerInstance();
             EventHandler eventHandler = new EventHandler(socket, this, eventListener);
-            //TODO !demon in common pool
-            CompletableFuture.runAsync(eventHandler);
+            Thread eventHandlerThread = new Thread(eventHandler);
+            eventHandlerThread.start();
             return true;
         }
-        catch(IOException ignore){}
+        catch(IOException e){
+            loginView.showLogoutCause("failed to connect");
+        }
         return false;
     }
 
-
-    public void disconnect(){
-        try {
-            loginView.openForm();
-            mainView.closeForm();
-            socket.close();
-        }
-        catch(IOException ignore) {}
-    }
 
 
     public void newMessage(Message message){
@@ -123,12 +119,7 @@ public class Model{
 
 
     public void getLastMessages(){
-        var requestSender = senderListenerFactory.requestSenderInstance();
-        CompletableFuture.runAsync(() -> {
-            try {
-                requestSender.sendRequest(socket, new LastMessagesListRequest());
-            } catch (IOException ignore) {}
-        });
+        sendRequest(new LastMessagesListRequest());
     }
 
 
@@ -141,5 +132,15 @@ public class Model{
 
     public void updateUsersOnline(List<String> userNames){
         mainView.updateUsersOnline(userNames);
+    }
+
+    public void close(){
+        try {
+            if(socket!=null && socket.isConnected()) {
+                socket.close();
+            }
+        }
+        catch(IOException ignore){}
+        System.exit(0);
     }
 }

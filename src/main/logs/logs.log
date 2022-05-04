@@ -1,0 +1,21 @@
+2022-05-04 13:54:02: Server initialize
+2022-05-04 13:54:02: Server launched
+2022-05-04 13:54:06: Server initialize
+2022-05-04 13:54:06: Got a connection with: Socket[addr=/127.0.0.1,port=50448,localport=1337]
+2022-05-04 13:54:06: Receive request: LoginRequest[userName=nlddks]
+2022-05-04 13:54:06: User login: nlddks
+2022-05-04 13:54:06: nlddks - online
+2022-05-04 13:54:06: Send event SuccessLoginResponse[sessionId=42] to user nlddks
+2022-05-04 13:54:06: Send event ChangeOnlineUsersEvent[usersNames=[nlddks]] to user nlddks
+2022-05-04 13:54:07: Receive request: ru.nsu.fit.gemuev.server.requests.LastMessagesListRequest@1bc1da8a
+2022-05-04 13:54:07: Send event LastMessagesListEvent[messages=[]] to user nlddks
+2022-05-04 13:54:13: Receive request: MessageRequest[message=sdkdskds]
+2022-05-04 13:54:13: Send event MessageEvent[message=Message[userName=nlddks, message=sdkdskds, date=13:54]] to user nlddks
+2022-05-04 13:54:15: Receive request: MessageRequest[message=dsjndksdsnlk]
+2022-05-04 13:54:15: Send event MessageEvent[message=Message[userName=nlddks, message=dsjndksdsnlk, date=13:54]] to user nlddks
+2022-05-04 13:54:17: Receive request: MessageRequest[message=nkksdkdnlkdsnldk]
+2022-05-04 13:54:17: Send event MessageEvent[message=Message[userName=nlddks, message=nkksdkdnlkdsnldk, date=13:54]] to user nlddks
+2022-05-04 13:55:26: Send event FailLoginEvent[cause=you are timed out] to user nlddks
+2022-05-04 13:55:26: User logout: nlddks
+2022-05-04 13:55:26: User disconnected by timeout: nlddks
+2022-05-04 13:55:26: Unknown user Socket[addr=/127.0.0.1,port=50448,localport=1337]

@@ -43,7 +43,7 @@ public class MainSceneController implements MainView, Initializable {
 
     @FXML
     private void closeButtonClick(ActionEvent e){
-        System.exit(0);
+        model.close();
     }
 
 
@@ -64,16 +64,16 @@ public class MainSceneController implements MainView, Initializable {
     }
 
     @Override
-    public synchronized void addNewMessage(@NotNull Message message){
+    public void addNewMessage(@NotNull Message message){
         messagesArea.appendText(
                 "\n[%s] %s: %s".formatted(message.date(), message.userName(), message.message()));
     }
 
     @Override
-    public synchronized void updateUsersOnline(@NotNull List<String> userNames){
+    public void updateUsersOnline(@NotNull List<String> userNames){
         usersOnline.setText("");
         for(String userName : userNames){
-            usersOnline.appendText(userName);
+            usersOnline.appendText(userName+"\n");
         }
     }
 
@@ -87,4 +87,5 @@ public class MainSceneController implements MainView, Initializable {
     public void initialize(URL url, ResourceBundle resourceBundle) {
         model.setMainView(this);
     }
+
 }

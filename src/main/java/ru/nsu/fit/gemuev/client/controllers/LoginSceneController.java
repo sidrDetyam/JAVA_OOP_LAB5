@@ -1,6 +1,8 @@
 package ru.nsu.fit.gemuev.client.controllers;
 
+import javafx.application.Platform;
 import javafx.fxml.FXML;
+import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.TextField;
 import javafx.scene.input.KeyCode;
@@ -25,8 +27,10 @@ public class LoginSceneController implements LoginView {
     }
 
     @FXML
-    private void loginButtonPress(){
-        model.sendLoginRequest(loginField.getText());
+    private void loginButtonPress() {
+        if(!loginField.getText().equals("")) {
+            model.sendLoginRequest(loginField.getText());
+        }
     }
 
     @FXML
@@ -39,5 +43,17 @@ public class LoginSceneController implements LoginView {
     @Override
     public void openForm() {
         Client.setLoginScene();
+    }
+
+
+    @Override
+    public void showLogoutCause(String cause){
+
+        Platform.runLater(() -> {
+            Alert alert = new Alert(Alert.AlertType.INFORMATION);
+            alert.setTitle("Logout");
+            alert.setHeaderText(cause);
+            alert.showAndWait();
+        });
     }
 }

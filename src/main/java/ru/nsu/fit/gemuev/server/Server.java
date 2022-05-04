@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.concurrent.CompletableFuture;
+import org.apache.log4j.Logger;
 
 
 public class Server {
@@ -30,6 +31,7 @@ public class Server {
         return LazyHolder.INSTANCE;
     }
 
+    private final Logger log = Logger.getLogger(Server.class);
 
     private final int port;
     private final int maxUsers;
@@ -47,6 +49,10 @@ public class Server {
     }
 
     public int getTimeout(){return timeout;}
+
+    public Logger getLogger(){
+        return log;
+    }
 
     private Server() {
         users = new ArrayList<>();
@@ -68,7 +74,10 @@ public class Server {
             lastMessagesCount = Integer.parseInt(strMaxCntMessages);
             timeout = Integer.parseInt(strTimeout);
 
-        } catch (IOException e) {
+            log.info("Server initialize");
+
+        } catch (IOException | NullPointerException e) {
+            log.info("Server initialization fail" + e.getMessage());
             throw new LoadPropertiesException("Server initialization fail", e);
         }
     }
@@ -85,6 +94,7 @@ public class Server {
         try {
             var eventSender = senderListenerFactory.eventSenderInstance();
             eventSender.sendEvent(event, user.socket());
+            log.info("Send event " + event + " to user " + user.name());
         }
         catch (IOException e){
             e.printStackTrace();
@@ -94,7 +104,7 @@ public class Server {
 
     public synchronized void debugPrintAllUsers(){
         for(User user : users){
-            System.out.println(" --- " + user.name());
+            log.debug(user.name() + " - online");
         }
     }
 
@@ -103,7 +113,6 @@ public class Server {
 
         var opt = findUserBySocket(socket);
         if(opt.isEmpty()){
-            System.out.println("Unknown user");
             return;
         }
         User user = opt.get();
@@ -131,8 +140,8 @@ public class Server {
         }
 
         users.add(user);
-        System.out.println("user login: " + user.name());
-        debugPrintAllUsers();
+        log.info("User login: " + userName);
+        //debugPrintAllUsers();
 
         CompletableFuture.runAsync(() -> {
             sendEvent(new SuccessLoginResponse(42), user);
@@ -144,18 +153,22 @@ public class Server {
     public synchronized void userLogout(Socket socket){
 
         var opt= findUserBySocket(socket);
-        if(opt.isPresent()){
-            System.out.println("user logout: " + opt.get().name());
-            users.remove(opt.get());
-            debugPrintAllUsers();
-
-            CompletableFuture.runAsync(() -> broadcastEvent(new ChangeOnlineUsersEvent(onlineUserList())));
+        if(opt.isEmpty()){
+            log.error("Unknown user " + socket);
+            return;
         }
 
-        try {
-            socket.close();
-        }
-        catch(IOException ignore){}
+        log.info("User logout: " + opt.get().name());
+        users.remove(opt.get());
+        //debugPrintAllUsers();
+
+        CompletableFuture.runAsync(() -> {
+            try {
+                socket.close();
+            }
+            catch(IOException ignore){}
+            broadcastEvent(new ChangeOnlineUsersEvent(onlineUserList()));
+        });
     }
 
 
@@ -173,7 +186,7 @@ public class Server {
             sendEvent(new LastMessagesListEvent(list), user);
         }
         else {
-            System.out.println("Unknown user");
+            log.error("Unknown user " + socket);
         }
     }
 
@@ -202,10 +215,13 @@ public class Server {
 
     public synchronized void deleteNonActivityUsers(){
 
-        for(User user : users){
+        ArrayList<User> tmp = new ArrayList<>(users);
+
+        for(User user : tmp){
             if(user.isTimeOut(timeout)){
-                sendEvent(new FailLoginEvent("timeout"), user);
-                System.out.println("User " + user.name() + " disconnect by timout" );
+                sendEvent(new FailLoginEvent("you are timed out"), user);
+                userLogout(user.socket());
+                log.info("User disconnected by timeout: " + user.name());
             }
         }
     }
@@ -217,9 +233,13 @@ public class Server {
             ServerSocket serverSocket = new ServerSocket(port);
             timeoutDemon = new Thread(new TimeoutDemon(this));
             timeoutDemon.start();
+            log.info("Server launched");
 
             while(!Thread.interrupted()) {
                 Socket socket = serverSocket.accept();
+
+                log.info("Got a connection with: " + socket);
+
                 var requestListener = senderListenerFactory.requestListenerInstance();
 
                 Thread requestHandler = new Thread(new RequestHandler(this, socket, requestListener));
@@ -247,7 +267,6 @@ public class Server {
 
 
     public static void main(String[] args) {
-
         Server.getInstance().launch();
     }
 
