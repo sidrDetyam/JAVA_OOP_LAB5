@@ -1,5 +1,7 @@
 package ru.nsu.fit.gemuev.util;
 
+import ru.nsu.fit.gemuev.util.json.JsonSenderListenerFactory;
+
 public interface AbstractSenderListenerFactory {
 
     RequestSender requestSenderInstance();
@@ -9,4 +11,8 @@ public interface AbstractSenderListenerFactory {
     EventSender eventSenderInstance();
 
     EventListener eventListenerInstance();
+
+    static AbstractSenderListenerFactory of(){
+        return JsonSenderListenerFactory.getInstance();
+    }
 }

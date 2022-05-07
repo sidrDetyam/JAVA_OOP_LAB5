@@ -7,7 +7,12 @@ import ru.nsu.fit.gemuev.util.Event;
 
 import java.util.ArrayList;
 
-public record LastMessagesListEvent(ArrayList<Message> messages) implements Event {
+
+public record LastMessagesListEvent(ArrayList<Message> messages, String eventType) implements Event {
+
+    public LastMessagesListEvent(ArrayList<Message> messages){
+        this(messages, "LastMessagesList");
+    }
 
     @Override
     public void handleEvent(@NotNull Model model) {

@@ -5,7 +5,11 @@ import ru.nsu.fit.gemuev.util.Request;
 
 import java.net.Socket;
 
-public class LastMessagesListRequest implements Request {
+public record LastMessagesListRequest(String requestType) implements Request {
+
+    public LastMessagesListRequest(){
+        this("LastMessagesList");
+    }
 
     @Override
     public void handleRequest(Server server, Socket socket) {

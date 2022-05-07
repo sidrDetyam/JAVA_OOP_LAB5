@@ -2,7 +2,7 @@ package ru.nsu.fit.gemuev.server;
 
 import org.jetbrains.annotations.NotNull;
 import ru.nsu.fit.gemuev.util.AbstractSenderListenerFactory;
-import ru.nsu.fit.gemuev.util.serializable.SerializableSenderListenerFactory;
+import ru.nsu.fit.gemuev.util.LoadPropertiesException;
 import ru.nsu.fit.gemuev.client.events.*;
 import ru.nsu.fit.gemuev.util.Event;
 import ru.nsu.fit.gemuev.client.events.SuccessLoginResponse;
@@ -18,6 +18,9 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ForkJoinPool;
+
 import org.apache.log4j.Logger;
 
 
@@ -37,11 +40,14 @@ public class Server {
     private final int maxUsers;
     private final int lastMessagesCount;
     private final int timeout;
-    private final AbstractSenderListenerFactory senderListenerFactory;
-    private final List<User> users;
-    private final List<Message> messages;
     private Thread timeoutDemon;
-    private final List<Thread> requestHandlers;
+
+    private final Executor threadPool = ForkJoinPool.commonPool();
+    private final AbstractSenderListenerFactory senderListenerFactory =
+            AbstractSenderListenerFactory.of();
+    private final List<User> users = new ArrayList<>();
+    private final List<Message> messages = new ArrayList<>();
+    private final List<Thread> requestHandlers = new ArrayList<>();
 
 
     public int getPort(){
@@ -55,13 +61,8 @@ public class Server {
     }
 
     private Server() {
-        users = new ArrayList<>();
-        messages = new ArrayList<>();
-        requestHandlers = new ArrayList<>();
-        senderListenerFactory = SerializableSenderListenerFactory.getInstance();
 
         try (InputStream inputStream = Server.class.getResourceAsStream("/server_config.properties")){
-
             var tmp = new Properties();
             tmp.load(inputStream);
             String strPort = tmp.getProperty("port");
@@ -91,14 +92,16 @@ public class Server {
 
 
     public void sendEvent(@NotNull Event event, @NotNull User user){
-        try {
-            var eventSender = senderListenerFactory.eventSenderInstance();
-            eventSender.sendEvent(event, user.socket());
-            log.info("Send event " + event + " to user " + user.name());
-        }
-        catch (IOException e){
-            e.printStackTrace();
-        }
+
+        CompletableFuture.runAsync(() -> {
+            try {
+                var eventSender = senderListenerFactory.eventSenderInstance();
+                eventSender.sendEvent(event, user.socket());
+                log.info("Send event " + event + " to user " + user.name());
+            } catch (IOException e) {
+                log.error("Send event error " + e.getMessage());
+            }
+        }, threadPool);
     }
 
 
@@ -134,19 +137,15 @@ public class Server {
         User user = new User(userName, socket);
 
         if(users.size()==maxUsers){
-            CompletableFuture.runAsync(() ->
-                    sendEvent(new FailLoginEvent("Reached max count of users"), user));
-            return;
+            sendEvent(new FailLoginEvent("Reached max count of users"), user);
         }
 
         users.add(user);
         log.info("User login: " + userName);
         //debugPrintAllUsers();
 
-        CompletableFuture.runAsync(() -> {
-            sendEvent(new SuccessLoginResponse(42), user);
-            broadcastEvent(new ChangeOnlineUsersEvent(onlineUserList()));
-        });
+        sendEvent(new SuccessLoginResponse(), user);
+        broadcastEvent(new ChangeOnlineUsersEvent(onlineUserList()));
     }
 
 
@@ -154,7 +153,7 @@ public class Server {
 
         var opt= findUserBySocket(socket);
         if(opt.isEmpty()){
-            log.error("Unknown user " + socket);
+            log.error("Unknown user (2)" + socket);
             return;
         }
 
@@ -162,13 +161,11 @@ public class Server {
         users.remove(opt.get());
         //debugPrintAllUsers();
 
-        CompletableFuture.runAsync(() -> {
-            try {
-                socket.close();
-            }
-            catch(IOException ignore){}
-            broadcastEvent(new ChangeOnlineUsersEvent(onlineUserList()));
-        });
+        try {
+            socket.close();
+        }
+        catch(IOException ignore){}
+        broadcastEvent(new ChangeOnlineUsersEvent(onlineUserList()));
     }
 
 
@@ -186,7 +183,7 @@ public class Server {
             sendEvent(new LastMessagesListEvent(list), user);
         }
         else {
-            log.error("Unknown user " + socket);
+            log.error("Unknown user (1)" + socket);
         }
     }
 
@@ -266,8 +263,7 @@ public class Server {
     }
 
 
-    public static void main(String[] args) {
+    public static void main(String[] args){
         Server.getInstance().launch();
     }
-
 }

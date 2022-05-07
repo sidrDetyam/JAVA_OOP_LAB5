@@ -4,7 +4,11 @@ import org.jetbrains.annotations.NotNull;
 import ru.nsu.fit.gemuev.util.Event;
 import ru.nsu.fit.gemuev.client.Model;
 
-public record SuccessLoginResponse(int sessionId) implements Event {
+public record SuccessLoginResponse(String eventType) implements Event {
+
+    public SuccessLoginResponse(){
+        this("SuccessLogin");
+    }
 
     @Override
     public void handleEvent(@NotNull Model model) {

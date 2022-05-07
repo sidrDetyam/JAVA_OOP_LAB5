@@ -27,9 +27,8 @@ public class Client extends Application {
         stage.setScene(scene);
         stage.setResizable(false);
 
-        stage.getScene().getWindow().addEventFilter(WindowEvent.WINDOW_CLOSE_REQUEST, e -> {
-            Model.getInstance().close();
-        });
+        stage.getScene().getWindow().addEventFilter(WindowEvent.WINDOW_CLOSE_REQUEST,
+                e -> Model.getInstance().close());
 
         stage.show();
     }

@@ -4,7 +4,6 @@ package ru.nsu.fit.gemuev.client;
 import ru.nsu.fit.gemuev.server.Message;
 import ru.nsu.fit.gemuev.util.AbstractSenderListenerFactory;
 import ru.nsu.fit.gemuev.util.Request;
-import ru.nsu.fit.gemuev.util.serializable.SerializableSenderListenerFactory;
 import ru.nsu.fit.gemuev.server.Server;
 import ru.nsu.fit.gemuev.server.requests.*;
 
@@ -12,6 +11,8 @@ import java.io.IOException;
 import java.net.Socket;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ForkJoinPool;
 
 
 public class Model{
@@ -26,7 +27,10 @@ public class Model{
 
 
     private Socket socket;
-    private final AbstractSenderListenerFactory senderListenerFactory;
+    private final AbstractSenderListenerFactory senderListenerFactory =
+            AbstractSenderListenerFactory.of();
+    private final Executor threadPool = ForkJoinPool.commonPool();
+
     private LoginView loginView;
     private MainView mainView;
 
@@ -39,11 +43,7 @@ public class Model{
         this.mainView = mainView;
     }
 
-
-    private Model(){
-        senderListenerFactory = SerializableSenderListenerFactory.getInstance();
-    }
-
+    private Model(){}
 
     public void sendRequest(Request request){
         var requestSender = senderListenerFactory.requestSenderInstance();
@@ -51,12 +51,11 @@ public class Model{
             try {
                 requestSender.sendRequest(socket, request);
             } catch (IOException ignore) {}
-        });
+        }, threadPool);
     }
 
 
     public void sendLoginRequest(String name){
-
         if(connect()) {
             sendRequest(new LoginRequest(name));
         }
@@ -90,7 +89,6 @@ public class Model{
         sendRequest(new LogoutRequest());
     }
 
-
     public void sendNewMessage(String message){
         sendRequest(new MessageRequest(message));
     }
@@ -112,16 +110,13 @@ public class Model{
     }
 
 
-
     public void newMessage(Message message){
         mainView.addNewMessage(message);
     }
 
-
     public void getLastMessages(){
         sendRequest(new LastMessagesListRequest());
     }
-
 
     public void showListOfMessages(List<Message> list){
         for(Message message : list){

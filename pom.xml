@@ -23,7 +23,7 @@
         <dependency>
             <groupId>org.jetbrains</groupId>
             <artifactId>annotations</artifactId>
-            <version>RELEASE</version>
+            <version>23.0.0</version>
             <scope>compile</scope>
         </dependency>
 
@@ -33,6 +33,17 @@
             <version>1.2.17</version>
         </dependency>
 
+        <dependency>
+            <groupId>com.google.code.gson</groupId>
+            <artifactId>gson</artifactId>
+            <version>2.9.0</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+            <version>2.13.2.2</version>
+        </dependency>
 
     </dependencies>
     <build>
@@ -60,14 +71,16 @@
         <resources>
             <resource>
                 <directory>src/main/resources/ru/nsu/fit/gemuev/server</directory>
-                <includes>
-                    <include>server_config.properties</include>
-                </includes>
             </resource>
 
             <resource>
                 <directory>src/main/resources/ru/nsu/fit/gemuev/client</directory>
             </resource>
+
+            <resource>
+                <directory>src/main/resources/ru/nsu/fit/gemuev/util</directory>
+            </resource>
+
         </resources>
 
     </build>
