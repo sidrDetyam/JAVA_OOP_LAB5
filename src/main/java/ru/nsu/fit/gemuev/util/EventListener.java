@@ -4,9 +4,11 @@ import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 import java.net.Socket;
-import java.util.Optional;
+
 
 public interface EventListener {
 
-    Optional<Event> nextEvent(@NotNull Socket socket) throws IOException;
+    Event nextEvent(@NotNull Socket socket) throws IOException;
+
+    Event nextEvent(@NotNull Socket socket, int timeout) throws IOException;
 }

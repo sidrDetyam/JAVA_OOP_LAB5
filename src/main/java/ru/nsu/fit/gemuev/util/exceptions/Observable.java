@@ -1,4 +1,4 @@
-package ru.nsu.fit.gemuev.util;
+package ru.nsu.fit.gemuev.util.exceptions;
 
 import java.util.ArrayList;
 import java.util.function.Consumer;

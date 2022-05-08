@@ -1,10 +1,10 @@
 package ru.nsu.fit.gemuev.util.json;
 
-import com.fasterxml.jackson.core.JacksonException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import ru.nsu.fit.gemuev.util.Request;
 import ru.nsu.fit.gemuev.util.RequestListener;
+import ru.nsu.fit.gemuev.util.exceptions.UnknownClassException;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -27,8 +27,7 @@ public class JsonRequestListener implements RequestListener {
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Override
-    public Optional<Request> nextRequest(Socket socket) throws IOException {
-
+    public Request nextRequest(Socket socket) throws IOException {
 
         var bufferedReader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
         String jsonStr = bufferedReader.readLine();
@@ -36,21 +35,18 @@ public class JsonRequestListener implements RequestListener {
             throw new IOException("EOF");
         }
 
-
         String requestType = objectMapper.readValue(jsonStr, ObjectNode.class).get("requestType").asText();
-        Optional<Class<?>> requestClass = ClassByNameGetter.getInstance().getRequestClass(requestType);
 
-        if(requestClass.isPresent()){
-            try {
-                return Optional.of((Request) objectMapper.readValue(jsonStr, requestClass.get()));
-            }
-            catch(JacksonException e){
-                e.printStackTrace();
-                System.exit(1);
-            }
+        if(requestType==null){
+            throw new UnknownClassException("Request type is absent");
         }
 
-        return Optional.empty();
+        Optional<Class<?>> requestClass = ClassByNameGetter.getInstance().getRequestClass(requestType);
 
+        if(requestClass.isEmpty()){
+            throw new UnknownClassException("Unknown request type: " + requestType);
+        }
+
+        return (Request) objectMapper.readValue(jsonStr, requestClass.get());
     }
 }

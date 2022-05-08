@@ -2,17 +2,21 @@ package ru.nsu.fit.gemuev.client.controllers;
 
 import javafx.application.Platform;
 import javafx.fxml.FXML;
+import javafx.fxml.Initializable;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.TextField;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import ru.nsu.fit.gemuev.client.Client;
-import ru.nsu.fit.gemuev.client.LoginView;
+import ru.nsu.fit.gemuev.client.views.LoginView;
 import ru.nsu.fit.gemuev.client.Model;
 
+import java.net.URL;
+import java.util.ResourceBundle;
 
-public class LoginSceneController implements LoginView {
+
+public class LoginSceneController implements LoginView, Initializable {
 
     @FXML
     private TextField loginField;
@@ -55,5 +59,13 @@ public class LoginSceneController implements LoginView {
             alert.setHeaderText(cause);
             alert.showAndWait();
         });
+    }
+
+    @Override
+    public void initialize(URL url, ResourceBundle resourceBundle) {
+        model.setLoginView(this);
+        if(model.getUserName()!=null){
+            loginField.setText(model.getUserName());
+        }
     }
 }

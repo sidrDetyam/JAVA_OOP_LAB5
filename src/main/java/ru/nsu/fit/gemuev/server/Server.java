@@ -2,7 +2,7 @@ package ru.nsu.fit.gemuev.server;
 
 import org.jetbrains.annotations.NotNull;
 import ru.nsu.fit.gemuev.util.AbstractSenderListenerFactory;
-import ru.nsu.fit.gemuev.util.LoadPropertiesException;
+import ru.nsu.fit.gemuev.util.exceptions.LoadPropertiesException;
 import ru.nsu.fit.gemuev.client.events.*;
 import ru.nsu.fit.gemuev.util.Event;
 import ru.nsu.fit.gemuev.client.events.SuccessLoginResponse;
@@ -93,15 +93,18 @@ public class Server {
 
     public void sendEvent(@NotNull Event event, @NotNull User user){
 
-        CompletableFuture.runAsync(() -> {
-            try {
-                var eventSender = senderListenerFactory.eventSenderInstance();
-                eventSender.sendEvent(event, user.socket());
-                log.info("Send event " + event + " to user " + user.name());
-            } catch (IOException e) {
-                log.error("Send event error " + e.getMessage());
-            }
-        }, threadPool);
+        if(!user.isDebugDisconnected()) {
+            CompletableFuture.runAsync(() -> {
+                try {
+                    var eventSender = senderListenerFactory.eventSenderInstance();
+                    eventSender.sendEvent(event, user.socket());
+                    log.info("Send event " + event + " to user " + user.name());
+                } catch (IOException e) {
+                    log.error("Send event error " + e.getMessage());
+                    userLogout(user.socket());
+                }
+            }, threadPool);
+        }
     }
 
 
@@ -144,7 +147,7 @@ public class Server {
         log.info("User login: " + userName);
         //debugPrintAllUsers();
 
-        sendEvent(new SuccessLoginResponse(), user);
+        sendEvent(new SuccessLoginResponse(timeout), user);
         broadcastEvent(new ChangeOnlineUsersEvent(onlineUserList()));
     }
 
@@ -159,12 +162,9 @@ public class Server {
 
         log.info("User logout: " + opt.get().name());
         users.remove(opt.get());
+        sendEvent(new FailLoginEvent(""), opt.get());
         //debugPrintAllUsers();
 
-        try {
-            socket.close();
-        }
-        catch(IOException ignore){}
         broadcastEvent(new ChangeOnlineUsersEvent(onlineUserList()));
     }
 
@@ -172,8 +172,10 @@ public class Server {
     public synchronized void lastMessagesListRequest(Socket socket){
 
         var opt = findUserBySocket(socket);
-        if(opt.isPresent()){
+        if(opt.isPresent()) {
             User user = opt.get();
+            user.updateActivity();
+
             ArrayList<Message> list = new ArrayList<>();
             int startInd = messages.size()-Math.min(lastMessagesCount, messages.size());
             for(int i=startInd; i<messages.size(); ++i){
@@ -208,7 +210,21 @@ public class Server {
         }
         return usersOnline;
     }
-    
+
+
+    public void getUserList(Socket socket){
+
+        var opt = findUserBySocket(socket);
+        if(opt.isPresent()){
+            opt.get().updateActivity();
+            var list = onlineUserList();
+            sendEvent(new ChangeOnlineUsersEvent(list), opt.get());
+        }
+        else{
+            log.error("Unknown user " + socket);
+        }
+    }
+
 
     public synchronized void deleteNonActivityUsers(){
 
@@ -216,11 +232,36 @@ public class Server {
 
         for(User user : tmp){
             if(user.isTimeOut(timeout)){
-                sendEvent(new FailLoginEvent("you are timed out"), user);
                 userLogout(user.socket());
+                try {
+                    user.socket().close();
+                }
+                catch (IOException ignore){}
                 log.info("User disconnected by timeout: " + user.name());
             }
+            else if(user.isHalfTimeOut(timeout)){
+                sendEvent(new ProbeEvent(), user);
+            }
         }
+    }
+
+
+    public void updateUserActivity(Socket socket){
+
+        var opt = findUserBySocket(socket);
+        if(opt.isPresent()){
+            opt.get().updateActivity();
+        }
+        else{
+            log.error("Unknown user " + socket);
+        }
+    }
+
+
+    //for debug and demonstration
+    public void testTimeOut(Socket socket){
+        var opt = findUserBySocket(socket);
+        opt.ifPresent(User::disconnect);
     }
 
 
@@ -248,6 +289,7 @@ public class Server {
             e.printStackTrace();
         }
     }
+
 
     public synchronized void stop(){
         for(User user : users){

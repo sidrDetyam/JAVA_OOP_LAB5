@@ -1,6 +1,8 @@
 
 package ru.nsu.fit.gemuev.client;
 
+import ru.nsu.fit.gemuev.client.views.LoginView;
+import ru.nsu.fit.gemuev.client.views.MainView;
 import ru.nsu.fit.gemuev.server.Message;
 import ru.nsu.fit.gemuev.util.AbstractSenderListenerFactory;
 import ru.nsu.fit.gemuev.util.Request;
@@ -33,19 +35,32 @@ public class Model{
 
     private LoginView loginView;
     private MainView mainView;
+    private boolean isLogin;
+    private int serverTimeout = 30000;
+    private String userName;
 
 
-    public void setLoginView(LoginView loginView){
+    public synchronized String getUserName(){return userName;}
+
+    public synchronized int getServerTimeout(){return serverTimeout;}
+
+    public synchronized LoginView loginView(){return loginView;}
+
+    public synchronized boolean isLogin(){
+        return isLogin;
+    }
+
+    public synchronized void setLoginView(LoginView loginView){
         this.loginView = loginView;
     }
 
-    public void setMainView(MainView mainView){
+    public synchronized void setMainView(MainView mainView){
         this.mainView = mainView;
     }
 
     private Model(){}
 
-    public void sendRequest(Request request){
+    public synchronized void sendRequest(Request request){
         var requestSender = senderListenerFactory.requestSenderInstance();
         CompletableFuture.runAsync(() -> {
             try {
@@ -55,22 +70,27 @@ public class Model{
     }
 
 
-    public void sendLoginRequest(String name){
+    public synchronized void sendLoginRequest(String name){
         if(connect()) {
+            userName = name;
             sendRequest(new LoginRequest(name));
         }
     }
 
 
-    public void acceptLoginResponse(){
+    public synchronized void acceptLoginResponse(int serverTimeout){
         loginView.closeForm();
         mainView.openForm();
+        this.serverTimeout = serverTimeout;
+        isLogin = true;
         getLastMessages();
+        getOnlineUserList();
     }
 
 
-    public void disconnect(){
+    public synchronized void disconnect(){
         try {
+            isLogin = false;
             mainView.closeForm();
             loginView.openForm();
             socket.close();
@@ -79,22 +99,12 @@ public class Model{
     }
 
 
-    public void logoutEvent(String cause){
+    public synchronized void logoutEvent(String cause){
         disconnect();
-        loginView.showLogoutCause(cause);
     }
 
 
-    public void sendLogoutRequest(){
-        sendRequest(new LogoutRequest());
-    }
-
-    public void sendNewMessage(String message){
-        sendRequest(new MessageRequest(message));
-    }
-
-
-    public boolean connect(){
+    public synchronized boolean connect(){
         try {
             socket = new Socket("localhost", Server.getInstance().getPort());
             var eventListener = senderListenerFactory.eventListenerInstance();
@@ -110,26 +120,40 @@ public class Model{
     }
 
 
-    public void newMessage(Message message){
+    public synchronized void sendProveRequest(){sendRequest(new ProbeRequest());}
+
+    public synchronized void getOnlineUserList(){sendRequest(new OnlineUsersListRequest());}
+
+    public synchronized void sendLogoutRequest(){
+        sendRequest(new LogoutRequest());
+    }
+
+    public synchronized void sendNewMessage(String message){
+        sendRequest(new MessageRequest(message));
+    }
+
+    public synchronized void newMessage(Message message){
         mainView.addNewMessage(message);
     }
 
-    public void getLastMessages(){
+    public synchronized void getLastMessages(){
         sendRequest(new LastMessagesListRequest());
     }
 
-    public void showListOfMessages(List<Message> list){
+    public synchronized void disconnectTest(){sendRequest(new TestTimeoutRequest());}
+
+    public synchronized void showListOfMessages(List<Message> list){
         for(Message message : list){
             newMessage(message);
         }
     }
 
 
-    public void updateUsersOnline(List<String> userNames){
+    public synchronized void updateUsersOnline(List<String> userNames){
         mainView.updateUsersOnline(userNames);
     }
 
-    public void close(){
+    public synchronized void close(){
         try {
             if(socket!=null && socket.isConnected()) {
                 socket.close();

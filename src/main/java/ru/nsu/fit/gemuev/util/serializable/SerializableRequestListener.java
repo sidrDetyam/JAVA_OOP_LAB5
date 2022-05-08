@@ -3,10 +3,11 @@ package ru.nsu.fit.gemuev.util.serializable;
 import org.jetbrains.annotations.NotNull;
 import ru.nsu.fit.gemuev.util.Request;
 import ru.nsu.fit.gemuev.util.RequestListener;
+import ru.nsu.fit.gemuev.util.exceptions.UnknownClassException;
 
 import java.io.*;
 import java.net.Socket;
-import java.util.Optional;
+
 
 public class SerializableRequestListener implements RequestListener {
 
@@ -21,16 +22,14 @@ public class SerializableRequestListener implements RequestListener {
     }
 
     @Override
-    public Optional<Request> nextRequest(@NotNull Socket socket) throws IOException{
+    public Request nextRequest(@NotNull Socket socket) throws IOException{
 
         try {
             var in = new ObjectInputStream(new BufferedInputStream(socket.getInputStream()));
-            return  Optional.of((Request) in.readObject());
+            return  (Request) in.readObject();
         }
         catch(ClassNotFoundException e){
-            e.printStackTrace();
+            throw new UnknownClassException("Unknown class", e);
         }
-
-        return Optional.empty();
     }
 }

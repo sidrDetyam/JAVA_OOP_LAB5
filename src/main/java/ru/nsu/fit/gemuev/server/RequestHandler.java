@@ -16,13 +16,7 @@ public record RequestHandler(@NotNull Server server, @NotNull Socket socket,
 
         try {
             while (!Thread.interrupted()) {
-
-                var opt = requestListener.nextRequest(socket);
-                if (opt.isEmpty()) {
-                    throw new IOException("Something wrong with input object");
-                }
-
-                Request request = opt.get();
+                Request request = requestListener.nextRequest(socket);
                 server.getLogger().info("Receive request: " + request);
                 request.handleRequest(server, socket);
             }

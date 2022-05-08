@@ -10,7 +10,7 @@ public record TimeoutDemon(Server server) implements Runnable{
         while (!Thread.interrupted()) {
             server.deleteNonActivityUsers();
             try {
-                Thread.sleep(1000L * server.getTimeout());
+                Thread.sleep(server.getTimeout()/2);
             } catch (InterruptedException ignore){}
         }
 

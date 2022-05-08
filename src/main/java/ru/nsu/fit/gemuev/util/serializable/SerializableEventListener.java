@@ -3,12 +3,13 @@ package ru.nsu.fit.gemuev.util.serializable;
 import org.jetbrains.annotations.NotNull;
 import ru.nsu.fit.gemuev.util.EventListener;
 import ru.nsu.fit.gemuev.util.Event;
+import ru.nsu.fit.gemuev.util.exceptions.UnknownClassException;
 
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.net.Socket;
-import java.util.Optional;
+
 
 public class SerializableEventListener implements EventListener {
 
@@ -23,16 +24,20 @@ public class SerializableEventListener implements EventListener {
     }
 
     @Override
-    public Optional<Event> nextEvent(@NotNull Socket socket) throws IOException {
+    public Event nextEvent(@NotNull Socket socket) throws IOException {
+        return nextEvent(socket, 0);
+    }
+
+    @Override
+    public Event nextEvent(@NotNull Socket socket, int timeout) throws IOException {
 
         try {
+            socket.setSoTimeout(timeout);
             var in = new ObjectInputStream(new BufferedInputStream(socket.getInputStream()));
-            return  Optional.of((Event) in.readObject());
+            return  (Event) in.readObject();
         }
         catch(ClassNotFoundException e){
-            e.printStackTrace();
+            throw new UnknownClassException("Unknown class", e);
         }
-
-        return Optional.empty();
     }
 }

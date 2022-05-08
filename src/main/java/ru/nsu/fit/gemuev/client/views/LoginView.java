@@ -1,4 +1,4 @@
-package ru.nsu.fit.gemuev.client;
+package ru.nsu.fit.gemuev.client.views;
 
 public interface LoginView {
 

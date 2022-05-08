@@ -1,4 +1,4 @@
-package ru.nsu.fit.gemuev.util;
+package ru.nsu.fit.gemuev.util.exceptions;
 
 public class LoadPropertiesException extends RuntimeException{
 

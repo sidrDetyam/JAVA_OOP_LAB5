@@ -1,4 +1,4 @@
-package ru.nsu.fit.gemuev.client;
+package ru.nsu.fit.gemuev.client.views;
 
 import org.jetbrains.annotations.NotNull;
 import ru.nsu.fit.gemuev.server.Message;

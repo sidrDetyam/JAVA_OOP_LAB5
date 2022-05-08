@@ -23,6 +23,10 @@ module OOP_LAB {
     exports ru.nsu.fit.gemuev.util.serializable;
     opens ru.nsu.fit.gemuev.util.serializable to javafx.fxml;
     opens ru.nsu.fit.gemuev.util to com.fasterxml.jackson.databind, com.google.gson, javafx.fxml;
+    exports ru.nsu.fit.gemuev.client.views;
+    opens ru.nsu.fit.gemuev.client.views to javafx.fxml;
+    exports ru.nsu.fit.gemuev.util.exceptions;
+    opens ru.nsu.fit.gemuev.util.exceptions to com.fasterxml.jackson.databind, com.google.gson, javafx.fxml;
 
 }
 

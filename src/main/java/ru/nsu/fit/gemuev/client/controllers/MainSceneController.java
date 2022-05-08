@@ -14,7 +14,7 @@ import javafx.scene.input.KeyEvent;
 import org.jetbrains.annotations.NotNull;
 import ru.nsu.fit.gemuev.client.Client;
 import ru.nsu.fit.gemuev.client.Model;
-import ru.nsu.fit.gemuev.client.MainView;
+import ru.nsu.fit.gemuev.client.views.MainView;
 import ru.nsu.fit.gemuev.server.Message;
 
 
@@ -46,6 +46,10 @@ public class MainSceneController implements MainView, Initializable {
         model.close();
     }
 
+    @FXML
+    private void disconnectTestButtonClick(ActionEvent e){
+        model.disconnectTest();
+    }
 
     @FXML
     private void sendButtonClick(){
@@ -81,7 +85,6 @@ public class MainSceneController implements MainView, Initializable {
     public void openForm() {
         Client.setMainScene();
     }
-
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {

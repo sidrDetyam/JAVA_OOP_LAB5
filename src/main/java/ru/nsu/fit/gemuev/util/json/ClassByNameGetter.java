@@ -1,7 +1,7 @@
 package ru.nsu.fit.gemuev.util.json;
 
 import ru.nsu.fit.gemuev.util.Event;
-import ru.nsu.fit.gemuev.util.LoadPropertiesException;
+import ru.nsu.fit.gemuev.util.exceptions.LoadPropertiesException;
 import ru.nsu.fit.gemuev.util.Request;
 
 import java.io.IOException;

@@ -8,11 +8,19 @@ public class User {
     private final String name;
     private final Socket socket;
     private final AtomicLong lastActivity;
+    //for debug and demonstration
+    private boolean isDebugDisconnected;
+
+    public void disconnect(){
+        isDebugDisconnected = true;
+    }
+
+    public boolean isDebugDisconnected(){return isDebugDisconnected;}
 
     public User(String name, Socket socket){
         this.name = name;
         this.socket = socket;
-        lastActivity = new AtomicLong(System.currentTimeMillis()/1000);
+        lastActivity = new AtomicLong(System.currentTimeMillis());
     }
 
     public String name(){
@@ -24,11 +32,17 @@ public class User {
     }
 
     public void updateActivity(){
-        lastActivity.set(System.currentTimeMillis()/1000);
+        if(!isDebugDisconnected) {
+            lastActivity.set(System.currentTimeMillis());
+        }
+    }
+
+    public boolean isHalfTimeOut(long timeout){
+        return System.currentTimeMillis() - lastActivity.get() > timeout/2;
     }
 
     public boolean isTimeOut(long timeout){
-        return System.currentTimeMillis()/1000 - lastActivity.get() > timeout;
+        return System.currentTimeMillis() - lastActivity.get() > timeout;
     }
 
 }
