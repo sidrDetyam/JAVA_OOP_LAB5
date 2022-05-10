@@ -77,7 +77,8 @@ public class MainSceneController implements MainView, Initializable {
     public void updateUsersOnline(@NotNull List<String> userNames){
         usersOnline.setText("");
         for(String userName : userNames){
-            usersOnline.appendText(userName+"\n");
+            String tmp = userName.equals(model.getUserName())? "[you]\n":"\n";
+            usersOnline.appendText(userName+tmp);
         }
     }
 

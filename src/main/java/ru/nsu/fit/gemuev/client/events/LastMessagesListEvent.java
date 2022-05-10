@@ -18,4 +18,9 @@ public record LastMessagesListEvent(ArrayList<Message> messages, String eventTyp
     public void handleEvent(@NotNull Model model) {
         model.showListOfMessages(messages);
     }
+
+    @Override
+    public String toString(){
+        return eventType;
+    }
 }

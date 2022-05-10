@@ -11,7 +11,5 @@ public record ProbeEvent(String eventType) implements Event {
     }
 
     @Override
-    public void handleEvent(@NotNull Model model) {
-        model.sendProveRequest();
-    }
+    public void handleEvent(@NotNull Model model) {}
 }

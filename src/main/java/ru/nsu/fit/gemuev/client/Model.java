@@ -120,8 +120,6 @@ public class Model{
     }
 
 
-    public synchronized void sendProveRequest(){sendRequest(new ProbeRequest());}
-
     public synchronized void getOnlineUserList(){sendRequest(new OnlineUsersListRequest());}
 
     public synchronized void sendLogoutRequest(){

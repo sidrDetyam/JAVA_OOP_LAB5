@@ -18,8 +18,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Executor;
-import java.util.concurrent.ForkJoinPool;
 
 import org.apache.log4j.Logger;
 
@@ -40,9 +38,10 @@ public class Server {
     private final int maxUsers;
     private final int lastMessagesCount;
     private final int timeout;
+    private final int halfTimeout;
+    private final int userEventThreadPoolNThreads;
     private Thread timeoutDemon;
 
-    private final Executor threadPool = ForkJoinPool.commonPool();
     private final AbstractSenderListenerFactory senderListenerFactory =
             AbstractSenderListenerFactory.of();
     private final List<User> users = new ArrayList<>();
@@ -56,6 +55,8 @@ public class Server {
 
     public int getTimeout(){return timeout;}
 
+    public int getHalfTimeout(){return halfTimeout;}
+
     public Logger getLogger(){
         return log;
     }
@@ -65,15 +66,12 @@ public class Server {
         try (InputStream inputStream = Server.class.getResourceAsStream("/server_config.properties")){
             var tmp = new Properties();
             tmp.load(inputStream);
-            String strPort = tmp.getProperty("port");
-            String strMaxUsers = tmp.getProperty("max_count_of_users");
-            String strMaxCntMessages = tmp.getProperty("last_messages_count");
-            String strTimeout = tmp.getProperty("user_time_out");
-
-            port = Integer.parseInt(strPort);
-            maxUsers = Integer.parseInt(strMaxUsers);
-            lastMessagesCount = Integer.parseInt(strMaxCntMessages);
-            timeout = Integer.parseInt(strTimeout);
+            port = Integer.parseInt(tmp.getProperty("port"));
+            maxUsers = Integer.parseInt(tmp.getProperty("max_count_of_users"));
+            lastMessagesCount = Integer.parseInt(tmp.getProperty("last_messages_count"));
+            timeout = Integer.parseInt(tmp.getProperty("user_time_out"));
+            halfTimeout = Integer.parseInt(tmp.getProperty("user_half_time_out"));
+            userEventThreadPoolNThreads = Integer.parseInt(tmp.getProperty("user_event_thread_pool"));
 
             log.info("Server initialize");
 
@@ -93,17 +91,19 @@ public class Server {
 
     public void sendEvent(@NotNull Event event, @NotNull User user){
 
+        //for demonstration
         if(!user.isDebugDisconnected()) {
             CompletableFuture.runAsync(() -> {
                 try {
                     var eventSender = senderListenerFactory.eventSenderInstance();
                     eventSender.sendEvent(event, user.socket());
                     log.info("Send event " + event + " to user " + user.name());
+                    user.updateActivity();
                 } catch (IOException e) {
                     log.error("Send event error " + e.getMessage());
                     userLogout(user.socket());
                 }
-            }, threadPool);
+            }, user.eventThreadPool());
         }
     }
 
@@ -122,7 +122,6 @@ public class Server {
             return;
         }
         User user = opt.get();
-        user.updateActivity();
 
         DateTimeFormatter dtf = DateTimeFormatter.ofPattern("HH:mm");
         var date = dtf.format(LocalTime.now());
@@ -137,7 +136,7 @@ public class Server {
 
     public synchronized void userLogin(Socket socket, String userName){
 
-        User user = new User(userName, socket);
+        User user = new User(userName, socket, userEventThreadPoolNThreads);
 
         if(users.size()==maxUsers){
             sendEvent(new FailLoginEvent("Reached max count of users"), user);
@@ -174,7 +173,6 @@ public class Server {
         var opt = findUserBySocket(socket);
         if(opt.isPresent()) {
             User user = opt.get();
-            user.updateActivity();
 
             ArrayList<Message> list = new ArrayList<>();
             int startInd = messages.size()-Math.min(lastMessagesCount, messages.size());
@@ -216,7 +214,6 @@ public class Server {
 
         var opt = findUserBySocket(socket);
         if(opt.isPresent()){
-            opt.get().updateActivity();
             var list = onlineUserList();
             sendEvent(new ChangeOnlineUsersEvent(list), opt.get());
         }
@@ -239,26 +236,14 @@ public class Server {
                 catch (IOException ignore){}
                 log.info("User disconnected by timeout: " + user.name());
             }
-            else if(user.isHalfTimeOut(timeout)){
+            else if(user.isHalfTimeOut(halfTimeout)){
                 sendEvent(new ProbeEvent(), user);
             }
         }
     }
 
 
-    public void updateUserActivity(Socket socket){
-
-        var opt = findUserBySocket(socket);
-        if(opt.isPresent()){
-            opt.get().updateActivity();
-        }
-        else{
-            log.error("Unknown user " + socket);
-        }
-    }
-
-
-    //for debug and demonstration
+    //for demonstration
     public void testTimeOut(Socket socket){
         var opt = findUserBySocket(socket);
         opt.ifPresent(User::disconnect);
